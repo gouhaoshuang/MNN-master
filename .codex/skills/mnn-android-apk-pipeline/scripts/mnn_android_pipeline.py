@@ -297,7 +297,7 @@ def validate_required_assets(android_root: Path) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="MNN Android APK Pipeline")
     parser.add_argument("--repo-url", help="新机器 clone 源码时使用的 Git URL")
-    parser.add_argument("--branch", default="main", help="Git 分支、tag 或 commit，默认 main")
+    parser.add_argument("--branch", help="可选的 Git 分支、tag 或 commit；不传时使用远端默认分支")
     parser.add_argument("--work-dir", default=str(Path.home() / "mnn-android-run"), help="clone 工作目录")
     parser.add_argument("--source-dir", help="--skip-clone 时使用的源码根目录")
     parser.add_argument("--modules", default="all", help="all 或逗号分隔模块名")
@@ -426,7 +426,10 @@ def main() -> int:
             log_warn(f"目标源码目录已存在，跳过 clone: {repo_root}")
         else:
             run_checked([git_exe, "clone", args.repo_url, str(repo_root)], cwd=work_root)
-        run_checked([git_exe, "checkout", args.branch], cwd=repo_root)
+        if args.branch:
+            run_checked([git_exe, "checkout", args.branch], cwd=repo_root)
+        else:
+            log_ok("未指定 --branch，使用 clone 后的远端默认分支")
         log_ok(f"源码准备完成: {repo_root}")
 
     android_root = repo_root / "project" / "android"
@@ -502,6 +505,12 @@ def main() -> int:
     if args.install:
         if not apk_paths:
             raise RuntimeError("没有可安装的 APK。")
+        unsigned_release_apks = [apk for apk in apk_paths if args.build_type == "Release" and "unsigned" in apk.name.lower()]
+        if unsigned_release_apks:
+            print("检测到 Release unsigned APK，Android 不能直接安装未签名 APK：")
+            for apk in unsigned_release_apks:
+                print(f"  - {apk}")
+            raise RuntimeError("请改用 --build-type Debug --install 做真机验证，或先为 Release 配置签名。")
         log_section("安装 APK")
         for apk in apk_paths:
             run_checked([str(adb_exe), "install", "-r", "--no-streaming", str(apk)], cwd=android_root)
