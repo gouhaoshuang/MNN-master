@@ -22,17 +22,19 @@ $RequiredCompileSdk = "34"
 $DefaultModules = @(
     "base_Yolov8nAPP",
     "base_MobilevitAPP",
-    "PaddleOCR",
+    "base_PaddleOCRAPP",
     "opt_Yolov8nAPP",
-    "opt_MobilevitAPP"
+    "opt_MobilevitAPP",
+    "opt_PaddleOCRAPP"
 )
 
 $ModulePackageNames = @{
     "base_Yolov8nAPP"    = "com.taobao.android.base_yolov8napp"
     "base_MobilevitAPP" = "com.taobao.android.base_Mobilevit"
-    "PaddleOCR"         = "com.taobao.android.paddleocr"
+    "base_PaddleOCRAPP" = "com.taobao.android.base_paddleocr"
     "opt_Yolov8nAPP"    = "com.taobao.android.opt_yolov8napp"
     "opt_MobilevitAPP"  = "com.taobao.android.opt_mnndemo"
+    "opt_PaddleOCRAPP"  = "com.taobao.android.opt_paddleocr"
 }
 
 function Show-Usage {
@@ -43,7 +45,7 @@ MNN Android APK Pipeline
   powershell -NoProfile -ExecutionPolicy Bypass -File .\mnn_android_pipeline.ps1 -RepoUrl "https://example.com/your/MNN-master.git" -Branch "main" -WorkDir "D:\work\mnn-android-run" -Modules "all" -BuildType "Release"
 
 已有源码：
-  powershell -NoProfile -ExecutionPolicy Bypass -File .\mnn_android_pipeline.ps1 -SkipClone -SourceDir "D:\MNN-master" -Modules "PaddleOCR,base_Yolov8nAPP" -BuildType "Debug"
+  powershell -NoProfile -ExecutionPolicy Bypass -File .\mnn_android_pipeline.ps1 -SkipClone -SourceDir "D:\MNN-master" -Modules "base_PaddleOCRAPP,base_Yolov8nAPP" -BuildType "Debug"
 
 常用参数：
   -RepoUrl       新电脑 clone 源码时必填
@@ -496,14 +498,15 @@ Write-Ok "工程结构校验通过"
 
 Write-Section "资产校验"
 Assert-RequiredFiles -Root $androidRoot -RelativePaths @(
-    "apps\PaddleOCR\src\main\assets\det4_fp32.mnn",
-    "apps\PaddleOCR\src\main\assets\rec4_fp32.mnn",
-    "apps\PaddleOCR\src\main\assets\cls4_fp32.mnn",
-    "apps\PaddleOCR\src\main\assets\det4_fp16.mnn",
-    "apps\PaddleOCR\src\main\assets\rec4_fp16.mnn",
-    "apps\PaddleOCR\src\main\assets\cls4_fp16.mnn",
-    "apps\PaddleOCR\src\main\assets\ocr_keys.txt"
-) -ErrorPrefix "PaddleOCR"
+    "apps\base_PaddleOCRAPP\src\main\assets\det4_fp32.mnn",
+    "apps\base_PaddleOCRAPP\src\main\assets\rec4_fp32.mnn",
+    "apps\base_PaddleOCRAPP\src\main\assets\cls4_fp32.mnn",
+    "apps\base_PaddleOCRAPP\src\main\assets\ocr_keys.txt",
+    "apps\opt_PaddleOCRAPP\src\main\assets\det4_fp16.mnn",
+    "apps\opt_PaddleOCRAPP\src\main\assets\rec4_fp16.mnn",
+    "apps\opt_PaddleOCRAPP\src\main\assets\cls4_fp16.mnn",
+    "apps\opt_PaddleOCRAPP\src\main\assets\ocr_keys.txt"
+) -ErrorPrefix "PaddleOCR base/opt"
 
 foreach ($module in @("base_Yolov8nAPP", "opt_Yolov8nAPP")) {
     Assert-RequiredFiles -Root $androidRoot -RelativePaths @(

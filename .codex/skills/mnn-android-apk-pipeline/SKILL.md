@@ -29,7 +29,7 @@ python .\scripts\mnn_android_pipeline.py `
 python .\scripts\mnn_android_pipeline.py `
   --skip-clone `
   --source-dir "D:\MNN-master" `
-  --modules "PaddleOCR,base_Yolov8nAPP" `
+  --modules "base_PaddleOCRAPP,base_Yolov8nAPP" `
   --build-type "Debug"
 ```
 
@@ -59,7 +59,7 @@ python .\scripts\download_oss_assets.py `
 2. 如果用户想 fresh clone 但没有提供仓库地址，询问 `--repo-url`。
 3. 运行 `scripts/mnn_android_pipeline.py`。
 4. 如果环境预检失败，报告缺失项和脚本给出的建议命令。不要静默安装工具。
-5. 如果公开 OSS 验证资产缺失，并且存在 `project/android/oss_assets_manifest.json`，让 `mnn_android_pipeline.py` 自动还原它们。如果必需模型文件缺失，停止并说明模型文件必须随源码仓库提供，或先加入 manifest。
+5. 如果公开 OSS 静态资产缺失，并且存在 `project/android/oss_assets_manifest.json`，让 `mnn_android_pipeline.py` 自动还原它们。如果必需模型文件缺失，停止并说明模型文件必须随源码仓库提供，或先加入 manifest。
 6. 如果没有在线 adb 设备，提示用户连接手机、启用 USB 调试、接受 RSA 授权弹窗，然后用 `--install` 重新运行。
 
 ## GitHub 与 OSS 拼接模式
@@ -67,7 +67,7 @@ python .\scripts\download_oss_assets.py `
 这个 skill 支持把完整工程拆成两部分分发：
 
 - GitHub 保存源码、构建脚本、skill 文件、`project/android/oss_assets_manifest.json` 和小型必需模型文件。
-- OSS 保存已经被 manifest 接管的大型静态验证资产，例如 `annotations/`、`annotations.zip`、`yolo_val/`、`val_small_data/`、`imgVal/`。
+- OSS 保存已经被 manifest 接管的大型静态资产，例如 `annotations/`、`annotations.zip`、`yolo_val/`、`val_small_data/`、`imgVal/` 和 `base_PaddleOCRAPP/OpenCV/`。
 
 发布到 GitHub 前必须确认：
 
@@ -116,7 +116,8 @@ Python 主流水线会执行：
 
 - 检查 Windows、Python、网络、磁盘、Git、JDK 17、Android SDK、adb、Android 34 platform、NDK 27.0.12077973 和 CMake 3.18.1。
 - clone Git 仓库或复用已有 checkout。没有显式传入 `--branch` 时，使用远端默认分支。
-- 当 `--download-assets auto` 检测到静态资产缺失时，从 `project/android/oss_assets_manifest.json` 还原公开 OSS 资产。
+- 当 `--download-assets auto` 检测到静态资产缺失时，从 `project/android/oss_assets_manifest.json` 还原公开 OSS 资产，包括 PaddleOCR 共用的 OpenCV SDK。
+- 诊断 Android 工程配置，包括 `settings.gradle` 模块接入、PaddleOCR base/opt OpenCV 相对路径、CMake 3.18.1、Gradle 内存参数和 MobileViT 0 字节 32 位占位库。
 - 校验 MNN Android 模块和资产。
 - 写入 `project/android/local.properties` 中的本机 `sdk.dir`。
 - 使用 Gradle wrapper 构建选中的模块。
@@ -127,14 +128,15 @@ Python 主流水线会执行：
 
 - `base_Yolov8nAPP`
 - `base_MobilevitAPP`
-- `PaddleOCR`
+- `base_PaddleOCRAPP`
 - `opt_Yolov8nAPP`
 - `opt_MobilevitAPP`
+- `opt_PaddleOCRAPP`
 
 ## 备注
 
 - `--repo-url` 不要写死；由用户在运行时提供源码仓库地址。
 - `--branch` 是可选项；只有需要锁定特定分支、tag 或 commit 时才传入。
-- 这个 skill 默认不切换 PaddleOCR 的 fp32/fp16 设置。
+- PaddleOCR 已拆成 `base_PaddleOCRAPP` fp32 基准版和 `opt_PaddleOCRAPP` fp16 优化版。
 - `scripts/mnn_android_pipeline.ps1` 仅作为旧版参考保留；优先使用 `scripts/mnn_android_pipeline.py`。
 - 这个 skill 的脚本代码注释使用中文。

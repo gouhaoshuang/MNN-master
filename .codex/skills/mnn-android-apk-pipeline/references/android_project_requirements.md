@@ -39,9 +39,10 @@ project\android\gradle\wrapper\gradle-wrapper.properties
 ```text
 base_Yolov8nAPP
 base_MobilevitAPP
-PaddleOCR
+base_PaddleOCRAPP
 opt_Yolov8nAPP
 opt_MobilevitAPP
+opt_PaddleOCRAPP
 ```
 
 对应 Gradle 任务示例：
@@ -49,25 +50,27 @@ opt_MobilevitAPP
 ```text
 :apps:base_Yolov8nAPP:assembleRelease
 :apps:base_MobilevitAPP:assembleRelease
-:apps:PaddleOCR:assembleRelease
+:apps:base_PaddleOCRAPP:assembleRelease
 :apps:opt_Yolov8nAPP:assembleRelease
 :apps:opt_MobilevitAPP:assembleRelease
+:apps:opt_PaddleOCRAPP:assembleRelease
 ```
 
 ## 必需资产
 
-当前设计假设模型和字典随源码仓库提供。大体积验证数据可以不提交到 GitHub，而是通过 `project/android/oss_assets_manifest.json` 指向公开 OSS zip 包，由 `scripts/download_oss_assets.py` 下载、校验并还原。
+当前设计假设模型、字典和小型配置随源码仓库提供。大体积验证数据和 PaddleOCR 共用的 OpenCV SDK 不提交到 GitHub，而是通过 `project/android/oss_assets_manifest.json` 指向公开 OSS zip 包，由 `scripts/download_oss_assets.py` 下载、校验并还原。
 
-PaddleOCR 必需文件：
+PaddleOCR base/opt 必需文件：
 
 ```text
-apps\PaddleOCR\src\main\assets\det4_fp32.mnn
-apps\PaddleOCR\src\main\assets\rec4_fp32.mnn
-apps\PaddleOCR\src\main\assets\cls4_fp32.mnn
-apps\PaddleOCR\src\main\assets\det4_fp16.mnn
-apps\PaddleOCR\src\main\assets\rec4_fp16.mnn
-apps\PaddleOCR\src\main\assets\cls4_fp16.mnn
-apps\PaddleOCR\src\main\assets\ocr_keys.txt
+apps\base_PaddleOCRAPP\src\main\assets\det4_fp32.mnn
+apps\base_PaddleOCRAPP\src\main\assets\rec4_fp32.mnn
+apps\base_PaddleOCRAPP\src\main\assets\cls4_fp32.mnn
+apps\base_PaddleOCRAPP\src\main\assets\ocr_keys.txt
+apps\opt_PaddleOCRAPP\src\main\assets\det4_fp16.mnn
+apps\opt_PaddleOCRAPP\src\main\assets\rec4_fp16.mnn
+apps\opt_PaddleOCRAPP\src\main\assets\cls4_fp16.mnn
+apps\opt_PaddleOCRAPP\src\main\assets\ocr_keys.txt
 ```
 
 YOLO 必需模型：
@@ -111,9 +114,10 @@ Release 常见输出：
 ```text
 project\android\apps\base_Yolov8nAPP\release\base_Yolov8nAPP-release.apk
 project\android\apps\base_MobilevitAPP\release\base_MobilevitAPP-release.apk
-project\android\apps\PaddleOCR\release\PaddleOCR-release.apk
+project\android\apps\base_PaddleOCRAPP\release\base_PaddleOCRAPP-release.apk
 project\android\apps\opt_Yolov8nAPP\release\opt_Yolov8nAPP-release.apk
 project\android\apps\opt_MobilevitAPP\release\opt_MobilevitAPP-release.apk
+project\android\apps\opt_PaddleOCRAPP\release\opt_PaddleOCRAPP-release.apk
 ```
 
 如果这些路径不存在，脚本应回退扫描：
@@ -145,11 +149,13 @@ Pipeline::Init Start
 Pipeline::Init End. Dict size: 6625
 ```
 
-PaddleOCR fp32/fp16 切换参考当前仓库文档 `project\android\doc\paddleocr_fp16_fp32_switch.md`；本 skill 默认不改模型名或后端精度。
+PaddleOCR fp32/fp16 对比参考当前仓库文档 `project\android\doc\paddleocr_fp16_fp32_switch.md`；`base_PaddleOCRAPP` 是 fp32 基准版，`opt_PaddleOCRAPP` 是 fp16 优化版。
 
 ## OSS 静态资产分发
 
 GitHub 仓库应提交 `project\android\oss_assets_manifest.json`，但不提交 manifest 中列出的大型目录或压缩包。默认主流水线会在 `--download-assets auto` 模式下检测 manifest 资产是否缺失，并调用下载器补齐。
+
+PaddleOCR 的 `base_PaddleOCRAPP/OpenCV` 也属于 manifest 接管资产；`opt_PaddleOCRAPP` 通过相对路径引用 base 模块还原出的同一份 OpenCV SDK，不重复提交或下载第二份。
 
 manifest 中每个资产包含：
 

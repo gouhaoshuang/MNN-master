@@ -1,212 +1,124 @@
-# PaddleOCR fp32 / fp16 切换说明
+# PaddleOCR fp32 / fp16 双模块对比说明
 
-本文说明当前仓库中 `PaddleOCR` 如何在 `fp32` 和 `fp16` 两套模型之间切换，并说明为什么只改模型文件名还不等于真正启用 fp16 加速。
-
-## 1. 当前可用模型
-
-模型目录：
+当前仓库不再通过单个 `PaddleOCR` 模块手动切换 fp32 / fp16，而是使用两个可并存安装的 Android 模块做对比：
 
 ```text
-D:\MNN-master\project\android\apps\PaddleOCR\src\main\assets
+project/android/apps/base_PaddleOCRAPP
+project/android/apps/opt_PaddleOCRAPP
 ```
 
-当前已有两套模型：
+## 1. 模块职责
+
+`base_PaddleOCRAPP` 是 fp32 基准版：
+
+- APK 包名：`com.taobao.android.base_paddleocr`
+- 启动图标名：`base_paddleocr`
+- 模型文件：`det4_fp32.mnn`、`rec4_fp32.mnn`、`cls4_fp32.mnn`
+- MNN 后端精度：`MNN::BackendConfig::Precision_High`
+
+`opt_PaddleOCRAPP` 是 fp16 优化版：
+
+- APK 包名：`com.taobao.android.opt_paddleocr`
+- 启动图标名：`opt_paddleocr`
+- 模型文件：`det4_fp16.mnn`、`rec4_fp16.mnn`、`cls4_fp16.mnn`
+- MNN 后端精度：`MNN::BackendConfig::Precision_Low`
+
+两个模块保留相同的源码包名 `com.taobao.android.paddleocr`，这样 C++ 中的 JNI 函数名无需改动。
+
+## 2. 关键差异文件
+
+模型选择在两个模块各自的 `MainActivity.kt` 中：
 
 ```text
-det4_fp32.mnn
-rec4_fp32.mnn
-cls4_fp32.mnn
-
-det4_fp16.mnn
-rec4_fp16.mnn
-cls4_fp16.mnn
+apps/base_PaddleOCRAPP/src/main/java/com/taobao/android/paddleocr/MainActivity.kt
+apps/opt_PaddleOCRAPP/src/main/java/com/taobao/android/paddleocr/MainActivity.kt
 ```
 
-当前没有发现 PaddleOCR 的 int8 模型文件，例如：
+推理精度在三个 C++ predictor 中：
 
 ```text
-det4_int8.mnn
-rec4_int8.mnn
-cls4_int8.mnn
+src/main/cpp/det_process.cc
+src/main/cpp/rec_process.cc
+src/main/cpp/cls_process.cc
 ```
 
-所以当前仓库里 PaddleOCR 可直接切换的是 `fp32` 和 `fp16`，不是 int8。
+base 必须保持 `Precision_High`，opt 必须保持 `Precision_Low`。不要混用成 `det fp32 + rec fp16` 或 `fp16 模型 + Precision_High`，否则对比结果不干净。
 
-## 2. 为什么只改文件名不够
+## 3. OpenCV 与验证集资产
 
-PaddleOCR 的 Java/Kotlin 层只负责告诉 App 加载哪几个 `.mnn` 文件。位置：
+OpenCV SDK 只保留一份：
 
 ```text
-D:\MNN-master\project\android\apps\PaddleOCR\src\main\java\com\taobao\android\paddleocr\MainActivity.kt
+apps/base_PaddleOCRAPP/OpenCV
 ```
 
-但是实际推理 Session 是在 C++ 层创建的。当前三个 Predictor 都固定使用：
+`opt_PaddleOCRAPP` 的 CMake 通过相对路径引用 base 的 OpenCV：
 
-```cpp
-config.type = MNN_FORWARD_CPU;
-backendConfig.precision = MNN::BackendConfig::Precision_High;
-backendConfig.power = MNN::BackendConfig::Power_High;
+```cmake
+set(OPENCV_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../base_PaddleOCRAPP/OpenCV/sdk/native")
 ```
 
-相关文件：
+`imgVal` 验证集不交给 Git 保管，由 `project/android/oss_assets_manifest.json` 从公开 OSS 还原到两个模块：
 
 ```text
-D:\MNN-master\project\android\apps\PaddleOCR\src\main\cpp\det_process.cc
-D:\MNN-master\project\android\apps\PaddleOCR\src\main\cpp\rec_process.cc
-D:\MNN-master\project\android\apps\PaddleOCR\src\main\cpp\cls_process.cc
+apps/base_PaddleOCRAPP/src/main/assets/imgVal
+apps/opt_PaddleOCRAPP/src/main/assets/imgVal
 ```
 
-因此：
+## 4. 编译
 
-- 只把 `det4_fp32.mnn` 改成 `det4_fp16.mnn`，只是换了模型权重文件。
-- 如果 C++ 运行时仍然是 `Precision_High`，实际执行仍偏向高精度路径，不一定能得到 fp16 加速。
-- 要做真正的 fp16 加速实验，需要同时切换模型文件和 MNN 后端精度配置。
-
-## 3. fp32 基准配置
-
-### 3.1 模型文件名
-
-在 `MainActivity.kt` 中使用：
-
-```kotlin
-private val detModelPath = "det4_fp32.mnn"
-private val recModelPath = "rec4_fp32.mnn"
-private val clsModelPath = "cls4_fp32.mnn"
-```
-
-### 3.2 MNN 运行时精度
-
-在 `det_process.cc`、`rec_process.cc`、`cls_process.cc` 三个文件中保持：
-
-```cpp
-config.type = MNN_FORWARD_CPU;
-
-MNN::BackendConfig backendConfig;
-backendConfig.precision = MNN::BackendConfig::Precision_High;
-backendConfig.power = MNN::BackendConfig::Power_High;
-config.backendConfig = &backendConfig;
-```
-
-这套配置适合作为 fp32 基准版本，优先保证精度和稳定性。
-
-## 4. fp16 加速配置
-
-### 4.1 模型文件名
-
-在 `MainActivity.kt` 中改成：
-
-```kotlin
-private val detModelPath = "det4_fp16.mnn"
-private val recModelPath = "rec4_fp16.mnn"
-private val clsModelPath = "cls4_fp16.mnn"
-```
-
-三类模型要保持同一版本：
-
-- `det`：文本检测模型
-- `rec`：文本识别模型
-- `cls`：方向分类模型
-
-不要混用成 `det_fp16 + rec_fp32 + cls_fp16`，除非你明确要做单项对比实验。
-
-### 4.2 MNN 运行时精度
-
-在 `det_process.cc`、`rec_process.cc`、`cls_process.cc` 三个文件中，把：
-
-```cpp
-backendConfig.precision = MNN::BackendConfig::Precision_High;
-```
-
-改成：
-
-```cpp
-backendConfig.precision = MNN::BackendConfig::Precision_Low;
-```
-
-完整配置示例：
-
-```cpp
-config.type = MNN_FORWARD_CPU;
-
-MNN::BackendConfig backendConfig;
-backendConfig.precision = MNN::BackendConfig::Precision_Low;
-backendConfig.power = MNN::BackendConfig::Power_High;
-config.backendConfig = &backendConfig;
-```
-
-这一步才是让 MNN 尝试使用低精度计算路径的关键。
-
-## 5. 重要注意事项
-
-`fp16` 是否一定更快，取决于手机 CPU、MNN 后端、模型算子和当前编译出的 MNN 库能力。当前代码仍然使用 `MNN_FORWARD_CPU`，MNN 会在 CPU 后端下按设备能力选择可用实现；如果设备或算子不适合 fp16，收益可能很小，甚至可能没有收益。
-
-如果想进一步测试 GPU 路径，例如 OpenCL、Vulkan，需要确认当前 APK 链接的 MNN 动态库是否包含对应后端，并额外修改：
-
-```cpp
-config.type = MNN_FORWARD_OPENCL;
-```
-
-或其他后端类型。这个不是当前仓库 PaddleOCR 的默认配置，建议先完成 CPU + `Precision_Low` 的对比测试。
-
-## 6. 重新编译
-
-进入目录：
-
-```text
-D:\MNN-master\project\android
-```
-
-执行 Debug 编译：
+进入 Android 工程目录：
 
 ```powershell
-& 'D:\develop\jdk\jdk-17\bin\java.exe' -classpath 'D:\MNN-master\project\android\gradle\wrapper\gradle-wrapper.jar' org.gradle.wrapper.GradleWrapperMain --no-daemon :apps:PaddleOCR:assembleDebug --console=plain
+cd D:\MNN-master\project\android
 ```
 
-生成 APK：
+Debug 构建：
+
+```powershell
+& 'D:\develop\jdk\jdk-17\bin\java.exe' -classpath '.\gradle\wrapper\gradle-wrapper.jar' org.gradle.wrapper.GradleWrapperMain --no-daemon :apps:base_PaddleOCRAPP:assembleDebug :apps:opt_PaddleOCRAPP:assembleDebug --console=plain
+```
+
+产物路径：
 
 ```text
-D:\MNN-master\project\android\apps\PaddleOCR\build\outputs\apk\debug\PaddleOCR-debug.apk
+apps/base_PaddleOCRAPP/build/outputs/apk/debug/base_PaddleOCRAPP-debug.apk
+apps/opt_PaddleOCRAPP/build/outputs/apk/debug/opt_PaddleOCRAPP-debug.apk
 ```
 
-## 7. 安装到手机
+## 5. 安装与确认
+
+连接手机并确认 adb 在线：
 
 ```powershell
-& 'D:\develop\Android\SDK\platform-tools\adb.exe' install -r --no-streaming 'D:\MNN-master\project\android\apps\PaddleOCR\build\outputs\apk\debug\PaddleOCR-debug.apk'
+& 'D:\develop\Android\SDK\platform-tools\adb.exe' devices -l
 ```
 
-如果遇到签名不同的问题，先卸载旧版本再装：
+安装两个 Debug APK：
 
 ```powershell
-& 'D:\develop\Android\SDK\platform-tools\adb.exe' uninstall com.taobao.android.paddleocr
-& 'D:\develop\Android\SDK\platform-tools\adb.exe' install --no-streaming 'D:\MNN-master\project\android\apps\PaddleOCR\build\outputs\apk\debug\PaddleOCR-debug.apk'
+& 'D:\develop\Android\SDK\platform-tools\adb.exe' install -r --no-streaming 'D:\MNN-master\project\android\apps\base_PaddleOCRAPP\build\outputs\apk\debug\base_PaddleOCRAPP-debug.apk'
+& 'D:\develop\Android\SDK\platform-tools\adb.exe' install -r --no-streaming 'D:\MNN-master\project\android\apps\opt_PaddleOCRAPP\build\outputs\apk\debug\opt_PaddleOCRAPP-debug.apk'
 ```
 
-## 8. 是否需要清理 App 数据
+确认两个包可并存：
 
-当前 `PaddleOCR` 的模型复制逻辑在：
+```powershell
+& 'D:\develop\Android\SDK\platform-tools\adb.exe' shell pm list packages | Select-String paddleocr
+```
+
+预期包含：
 
 ```text
-D:\MNN-master\project\android\apps\PaddleOCR\src\main\java\com\taobao\android\paddleocr\Utils.kt
+package:com.taobao.android.base_paddleocr
+package:com.taobao.android.opt_paddleocr
 ```
 
-逻辑是：
+## 6. 数据清理
 
-```kotlin
-if (!file.exists()) {
-    // 从 assets 复制模型到 App 外部私有目录
-}
-```
-
-因为 `fp32` 和 `fp16` 文件名不同，所以从 `fp32` 切到 `fp16` 时，一般不需要清 App 数据。应用启动后会复制新的 `*_fp16.mnn` 文件。
-
-如果你替换了同名模型文件，例如仍然叫 `det4_fp16.mnn`，但文件内容变了，那么建议清理 App 数据或卸载重装：
+两个模块的 `applicationId` 不同，App 私有目录互不影响。替换同名模型文件后，建议清理对应包的数据：
 
 ```powershell
-& 'D:\develop\Android\SDK\platform-tools\adb.exe' shell pm clear com.taobao.android.paddleocr
-```
-
-或：
-
-```powershell
-& 'D:\develop\Android\SDK\platform-tools\adb.exe' uninstall com.taobao.android.paddleocr
+& 'D:\develop\Android\SDK\platform-tools\adb.exe' shell pm clear com.taobao.android.base_paddleocr
+& 'D:\develop\Android\SDK\platform-tools\adb.exe' shell pm clear com.taobao.android.opt_paddleocr
 ```

@@ -34,10 +34,11 @@ DEFAULT_ASSETS = [
     ("opt-yolov8n-yolo-val", "project/android/apps/opt_Yolov8nAPP/src/main/assets/yolo_val", "dir"),
     ("base-mobilevit-val-small-data", "project/android/apps/base_MobilevitAPP/src/main/assets/val_small_data", "dir"),
     ("opt-mobilevit-val-small-data", "project/android/apps/opt_MobilevitAPP/src/main/assets/val_small_data", "dir"),
-    ("paddleocr-imgval", "project/android/apps/PaddleOCR/src/main/assets/imgVal", "dir"),
+    ("base-paddleocr-imgval", "project/android/apps/base_PaddleOCRAPP/src/main/assets/imgVal", "dir"),
+    ("opt-paddleocr-imgval", "project/android/apps/opt_PaddleOCRAPP/src/main/assets/imgVal", "dir"),
 ]
 
-OPENCV_ASSET = ("paddleocr-opencv", "project/android/apps/PaddleOCR/OpenCV", "dir")
+OPENCV_ASSET = ("paddleocr-opencv", "project/android/apps/base_PaddleOCRAPP/OpenCV", "dir")
 
 
 def log_section(title: str) -> None:

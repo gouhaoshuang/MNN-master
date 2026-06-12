@@ -21,7 +21,8 @@ rootProject.name = "MNN"
 // ✅ 包含你的 APP
 include(":apps:base_MobilevitAPP")
 include(":apps:base_Yolov8nAPP")
-include(":apps:PaddleOCR")
+include(":apps:base_PaddleOCRAPP")
+include(":apps:opt_PaddleOCRAPP")
 
 include(":apps:opt_MobilevitAPP")
 include(":apps:opt_Yolov8nAPP")

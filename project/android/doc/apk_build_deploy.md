@@ -1,6 +1,6 @@
 # MNN Android 三个示例的 APK 编译与部署流程
 
-本文记录 `base_Yolov8nAPP`、`base_MobilevitAPP`、`PaddleOCR` 三个 Android 示例在当前仓库中的可重编译流程。
+本文记录 `base_Yolov8nAPP`、`base_MobilevitAPP`、`base_PaddleOCRAPP`、`opt_PaddleOCRAPP` 等 Android 示例在当前仓库中的可重编译流程。
 
 ## 1. 先决条件
 
@@ -25,12 +25,18 @@
 ```gradle
 include(":apps:base_MobilevitAPP")
 include(":apps:base_Yolov8nAPP")
-include(":apps:PaddleOCR")
+include(":apps:base_PaddleOCRAPP")
+include(":apps:opt_PaddleOCRAPP")
 ```
 
 ### 2.2 修正 PaddleOCR 的 OpenCV 路径
 
-文件：`D:\MNN-master\project\android\apps\PaddleOCR\src\main\cpp\CMakeLists.txt`
+文件：
+
+```text
+D:\MNN-master\project\android\apps\base_PaddleOCRAPP\src\main\cpp\CMakeLists.txt
+D:\MNN-master\project\android\apps\opt_PaddleOCRAPP\src\main\cpp\CMakeLists.txt
+```
 
 把硬编码路径改成相对路径：
 
@@ -38,9 +44,20 @@ include(":apps:PaddleOCR")
 set(OPENCV_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../OpenCV/sdk/native")
 ```
 
+`opt_PaddleOCRAPP` 复用 base 的 OpenCV：
+
+```cmake
+set(OPENCV_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../base_PaddleOCRAPP/OpenCV/sdk/native")
+```
+
 ### 2.3 修正 PaddleOCR 的 CMake 版本
 
-文件：`D:\MNN-master\project\android\apps\PaddleOCR\build.gradle`
+文件：
+
+```text
+D:\MNN-master\project\android\apps\base_PaddleOCRAPP\build.gradle
+D:\MNN-master\project\android\apps\opt_PaddleOCRAPP\build.gradle
+```
 
 将：
 
@@ -75,14 +92,15 @@ org.gradle.jvmargs=-Xmx6g -Dfile.encoding=UTF-8
 在 `D:\MNN-master\project\android` 下执行：
 
 ```powershell
-& 'D:\develop\jdk\jdk-17\bin\java.exe' -classpath 'D:\MNN-master\project\android\gradle\wrapper\gradle-wrapper.jar' org.gradle.wrapper.GradleWrapperMain --no-daemon :apps:base_Yolov8nAPP:assembleRelease :apps:base_MobilevitAPP:assembleRelease :apps:PaddleOCR:assembleRelease --console=plain
+& 'D:\develop\jdk\jdk-17\bin\java.exe' -classpath 'D:\MNN-master\project\android\gradle\wrapper\gradle-wrapper.jar' org.gradle.wrapper.GradleWrapperMain --no-daemon :apps:base_Yolov8nAPP:assembleRelease :apps:base_MobilevitAPP:assembleRelease :apps:base_PaddleOCRAPP:assembleRelease :apps:opt_PaddleOCRAPP:assembleRelease --console=plain
 ```
 
 ## 4. 产物位置
 
 - `D:\MNN-master\project\android\apps\base_Yolov8nAPP\release\base_Yolov8nAPP-release.apk`
 - `D:\MNN-master\project\android\apps\base_MobilevitAPP\release\base_MobilevitAPP-release.apk`
-- `D:\MNN-master\project\android\apps\PaddleOCR\release\PaddleOCR-release.apk`
+- `D:\MNN-master\project\android\apps\base_PaddleOCRAPP\release\base_PaddleOCRAPP-release.apk`
+- `D:\MNN-master\project\android\apps\opt_PaddleOCRAPP\release\opt_PaddleOCRAPP-release.apk`
 
 ## 5. 安装与部署
 
@@ -92,7 +110,8 @@ org.gradle.jvmargs=-Xmx6g -Dfile.encoding=UTF-8
 adb devices
 adb install -r D:\MNN-master\project\android\apps\base_Yolov8nAPP\release\base_Yolov8nAPP-release.apk
 adb install -r D:\MNN-master\project\android\apps\base_MobilevitAPP\release\base_MobilevitAPP-release.apk
-adb install -r D:\MNN-master\project\android\apps\PaddleOCR\release\PaddleOCR-release.apk
+adb install -r D:\MNN-master\project\android\apps\base_PaddleOCRAPP\release\base_PaddleOCRAPP-release.apk
+adb install -r D:\MNN-master\project\android\apps\opt_PaddleOCRAPP\release\opt_PaddleOCRAPP-release.apk
 ```
 
 ## 6. 本次构建中遇到的问题
@@ -114,14 +133,16 @@ adb install -r D:\MNN-master\project\android\apps\PaddleOCR\release\PaddleOCR-re
 ```powershell
 adb install -r D:\MNN-master\project\android\apps\base_Yolov8nAPP\release\base_Yolov8nAPP-release.apk
 adb install -r D:\MNN-master\project\android\apps\base_MobilevitAPP\release\base_MobilevitAPP-release.apk
-adb install -r D:\MNN-master\project\android\apps\PaddleOCR\release\PaddleOCR-release.apk
+adb install -r D:\MNN-master\project\android\apps\base_PaddleOCRAPP\release\base_PaddleOCRAPP-release.apk
+adb install -r D:\MNN-master\project\android\apps\opt_PaddleOCRAPP\release\opt_PaddleOCRAPP-release.apk
 ```
 
 执行结果：
 
 - `base_Yolov8nAPP-release.apk` 安装成功
 - `base_MobilevitAPP-release.apk` 安装成功
-- `PaddleOCR-release.apk` 安装成功
+- `base_PaddleOCRAPP-release.apk` 安装成功
+- `opt_PaddleOCRAPP-release.apk` 安装成功
 
 ## 8. 本次权限修复
 
@@ -151,8 +172,9 @@ adb install -r D:\MNN-master\project\android\apps\PaddleOCR\release\PaddleOCR-re
 验证：
 
 ```powershell
-& 'D:\develop\jdk\jdk-17\bin\java.exe' -classpath 'D:\MNN-master\project\android\gradle\wrapper\gradle-wrapper.jar' org.gradle.wrapper.GradleWrapperMain --no-daemon :apps:PaddleOCR:assembleDebug --console=plain
-& 'D:\develop\Android\SDK\platform-tools\adb.exe' install -r 'D:\MNN-master\project\android\apps\PaddleOCR\build\outputs\apk\debug\PaddleOCR-debug.apk'
+& 'D:\develop\jdk\jdk-17\bin\java.exe' -classpath 'D:\MNN-master\project\android\gradle\wrapper\gradle-wrapper.jar' org.gradle.wrapper.GradleWrapperMain --no-daemon :apps:base_PaddleOCRAPP:assembleDebug :apps:opt_PaddleOCRAPP:assembleDebug --console=plain
+& 'D:\develop\Android\SDK\platform-tools\adb.exe' install -r 'D:\MNN-master\project\android\apps\base_PaddleOCRAPP\build\outputs\apk\debug\base_PaddleOCRAPP-debug.apk'
+& 'D:\develop\Android\SDK\platform-tools\adb.exe' install -r 'D:\MNN-master\project\android\apps\opt_PaddleOCRAPP\build\outputs\apk\debug\opt_PaddleOCRAPP-debug.apk'
 ```
 
 启动日志中应能看到：

@@ -85,14 +85,36 @@
       "duplicateOf": "base-mobilevit-val-small-data"
     },
     {
-      "name": "paddleocr-imgval",
+      "name": "base-paddleocr-imgval",
       "kind": "dir",
-      "targetPath": "project/android/apps/PaddleOCR/src/main/assets/imgVal",
+      "targetPath": "project/android/apps/base_PaddleOCRAPP/src/main/assets/imgVal",
       "archiveType": "zip",
       "objectKey": "mnn-assets/android/paddleocr-imgval-4e67730b322bc917.zip",
       "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/paddleocr-imgval-4e67730b322bc917.zip",
       "sha256": "0b6e9f70b354c3243b1d4064c9d353e88821dddaaa8962f8c2f3a4bb22d7a685",
       "sizeBytes": 89178554,
+      "duplicateOf": null
+    },
+    {
+      "name": "opt-paddleocr-imgval",
+      "kind": "dir",
+      "targetPath": "project/android/apps/opt_PaddleOCRAPP/src/main/assets/imgVal",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/paddleocr-imgval-4e67730b322bc917.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/paddleocr-imgval-4e67730b322bc917.zip",
+      "sha256": "0b6e9f70b354c3243b1d4064c9d353e88821dddaaa8962f8c2f3a4bb22d7a685",
+      "sizeBytes": 89178554,
+      "duplicateOf": "base-paddleocr-imgval"
+    },
+    {
+      "name": "paddleocr-opencv",
+      "kind": "dir",
+      "targetPath": "project/android/apps/base_PaddleOCRAPP/OpenCV",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/paddleocr-opencv-f5b551f1dfb3f88c.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/paddleocr-opencv-f5b551f1dfb3f88c.zip",
+      "sha256": "e3ee61c0372dee646cad8bea899e5d4a3c27756a0d2eac3c4bd85d6f4e5095b5",
+      "sizeBytes": 75405542,
       "duplicateOf": null
     }
   ]

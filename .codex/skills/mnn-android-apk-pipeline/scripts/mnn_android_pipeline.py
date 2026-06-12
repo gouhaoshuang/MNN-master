@@ -21,16 +21,18 @@ REQUIRED_COMPILE_SDK = "34"
 DEFAULT_MODULES = [
     "base_Yolov8nAPP",
     "base_MobilevitAPP",
-    "PaddleOCR",
+    "base_PaddleOCRAPP",
     "opt_Yolov8nAPP",
     "opt_MobilevitAPP",
+    "opt_PaddleOCRAPP",
 ]
 MODULE_PACKAGE_NAMES = {
     "base_Yolov8nAPP": "com.taobao.android.base_yolov8napp",
     "base_MobilevitAPP": "com.taobao.android.base_Mobilevit",
-    "PaddleOCR": "com.taobao.android.paddleocr",
+    "base_PaddleOCRAPP": "com.taobao.android.base_paddleocr",
     "opt_Yolov8nAPP": "com.taobao.android.opt_yolov8napp",
     "opt_MobilevitAPP": "com.taobao.android.opt_mnndemo",
+    "opt_PaddleOCRAPP": "com.taobao.android.opt_paddleocr",
 }
 
 
@@ -254,15 +256,16 @@ def validate_required_assets(android_root: Path) -> None:
     assert_files(
         android_root,
         [
-            "apps/PaddleOCR/src/main/assets/det4_fp32.mnn",
-            "apps/PaddleOCR/src/main/assets/rec4_fp32.mnn",
-            "apps/PaddleOCR/src/main/assets/cls4_fp32.mnn",
-            "apps/PaddleOCR/src/main/assets/det4_fp16.mnn",
-            "apps/PaddleOCR/src/main/assets/rec4_fp16.mnn",
-            "apps/PaddleOCR/src/main/assets/cls4_fp16.mnn",
-            "apps/PaddleOCR/src/main/assets/ocr_keys.txt",
+            "apps/base_PaddleOCRAPP/src/main/assets/det4_fp32.mnn",
+            "apps/base_PaddleOCRAPP/src/main/assets/rec4_fp32.mnn",
+            "apps/base_PaddleOCRAPP/src/main/assets/cls4_fp32.mnn",
+            "apps/base_PaddleOCRAPP/src/main/assets/ocr_keys.txt",
+            "apps/opt_PaddleOCRAPP/src/main/assets/det4_fp16.mnn",
+            "apps/opt_PaddleOCRAPP/src/main/assets/rec4_fp16.mnn",
+            "apps/opt_PaddleOCRAPP/src/main/assets/cls4_fp16.mnn",
+            "apps/opt_PaddleOCRAPP/src/main/assets/ocr_keys.txt",
         ],
-        "PaddleOCR",
+        "PaddleOCR base/opt",
     )
 
     for module in ("base_Yolov8nAPP", "opt_Yolov8nAPP"):
@@ -292,6 +295,82 @@ def validate_required_assets(android_root: Path) -> None:
             ],
             module,
         )
+
+
+def validate_gradle_settings(android_root: Path, modules: list[str]) -> None:
+    settings_path = android_root / "settings.gradle"
+    text = settings_path.read_text(encoding="utf-8", errors="replace")
+    missing_includes = [module for module in modules if f':apps:{module}' not in text]
+    if missing_includes:
+        log_fail("settings.gradle 未启用以下模块：")
+        for module in missing_includes:
+            print(f'  - include(":apps:{module}")')
+        raise RuntimeError("请先在 settings.gradle 中接入要构建的模块。")
+
+
+def validate_paddleocr_configuration(android_root: Path, modules: list[str]) -> None:
+    expected_opencv_paths = {
+        "base_PaddleOCRAPP": 'set(OPENCV_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../OpenCV/sdk/native")',
+        "opt_PaddleOCRAPP": 'set(OPENCV_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../base_PaddleOCRAPP/OpenCV/sdk/native")',
+    }
+    for module in (item for item in modules if item in expected_opencv_paths):
+        cmake_path = android_root / "apps" / module / "src" / "main" / "cpp" / "CMakeLists.txt"
+        build_gradle_path = android_root / "apps" / module / "build.gradle"
+        cmake_text = cmake_path.read_text(encoding="utf-8", errors="replace")
+        gradle_text = build_gradle_path.read_text(encoding="utf-8", errors="replace")
+
+        expected_opencv = expected_opencv_paths[module]
+        if expected_opencv not in cmake_text:
+            log_fail(f"{module} 的 OpenCV 路径未使用约定的仓库内相对路径。")
+            print(f"  - 文件: {cmake_path}")
+            print(f"  - 期望包含: {expected_opencv}")
+            raise RuntimeError("请先修正 PaddleOCR OpenCV 路径，避免新机器硬编码路径失效。")
+
+        if f'version "{REQUIRED_CMAKE_VERSION}"' not in gradle_text and f"version '{REQUIRED_CMAKE_VERSION}'" not in gradle_text:
+            log_fail(f"{module} CMake 版本未配置为 {REQUIRED_CMAKE_VERSION}。")
+            print(f"  - 文件: {build_gradle_path}")
+            raise RuntimeError("请先修正 PaddleOCR build.gradle 中的 CMake 版本。")
+
+
+def validate_gradle_memory(android_root: Path) -> None:
+    gradle_properties = android_root / "gradle.properties"
+    if not gradle_properties.is_file():
+        log_warn("未找到 gradle.properties，跳过 Gradle 内存参数检查")
+        return
+    text = gradle_properties.read_text(encoding="utf-8", errors="replace")
+    match = re.search(r"(?m)^\s*org\.gradle\.jvmargs\s*=\s*(.+)$", text)
+    if not match:
+        log_warn("gradle.properties 未配置 org.gradle.jvmargs；处理 OpenCV AAR 时可能内存不足")
+        return
+    value = match.group(1)
+    heap_match = re.search(r"-Xmx(\d+)([gGmM])", value)
+    if not heap_match:
+        log_warn("org.gradle.jvmargs 未包含 -Xmx；处理 OpenCV AAR 时可能内存不足")
+        return
+    amount = int(heap_match.group(1))
+    unit = heap_match.group(2).lower()
+    heap_mb = amount * 1024 if unit == "g" else amount
+    if heap_mb < 6144:
+        log_warn(f"Gradle 最大堆内存小于 6g: -Xmx{amount}{unit}。建议使用 -Xmx6g。")
+
+
+def validate_mobilevit_jni_placeholders(android_root: Path, modules: list[str]) -> None:
+    for module in (item for item in modules if item in {"base_MobilevitAPP", "opt_MobilevitAPP"}):
+        abi_dir = android_root / "apps" / module / "src" / "main" / "jniLibs" / "armeabi-v7a"
+        if not abi_dir.is_dir():
+            continue
+        zero_files = [item for item in abi_dir.rglob("*.so") if item.is_file() and item.stat().st_size == 0]
+        if zero_files:
+            log_warn(f"{module} 存在 0 字节 armeabi-v7a 占位库，Gradle 可能打印 strip 警告：")
+            for item in zero_files:
+                print(f"  - {item}")
+
+
+def validate_project_configuration(android_root: Path, modules: list[str]) -> None:
+    validate_gradle_settings(android_root, modules)
+    validate_paddleocr_configuration(android_root, modules)
+    validate_gradle_memory(android_root)
+    validate_mobilevit_jni_placeholders(android_root, modules)
 
 
 def parse_args() -> argparse.Namespace:
@@ -448,6 +527,10 @@ def main() -> int:
     )
     assert_dirs(repo_root, [f"project/android/apps/{module}" for module in DEFAULT_MODULES], "Android 模块")
     log_ok("工程结构校验通过")
+
+    log_section("工程配置诊断")
+    validate_project_configuration(android_root, selected_modules)
+    log_ok("工程配置诊断通过")
 
     manifest_path = Path(args.asset_manifest).expanduser().resolve() if args.asset_manifest else android_root / "oss_assets_manifest.json"
     if args.download_assets == "always" or (args.download_assets == "auto" and manifest_asset_missing(repo_root, manifest_path)):

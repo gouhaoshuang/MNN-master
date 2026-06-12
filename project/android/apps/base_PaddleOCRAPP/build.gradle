@@ -1,0 +1,102 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+    namespace "com.taobao.android.paddleocr"
+    compileSdk 34
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    defaultConfig {
+        applicationId "com.taobao.android.base_paddleocr"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        // 解决类加载问题
+        manifestPlaceholders = [
+                "extractNativeLibs": "true"
+        ]
+
+        // 指定支持的 ABI (真机一般是 arm64-v8a)
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+
+        // 【关键修复1】配置 CMake 编译参数
+        // 告诉编译器使用 c++_shared 标准库（因为 MNN 也是用的这个），避免运行时 crash
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11"
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+    }
+
+    // 【关键修复2】告诉 Gradle 去哪里找 CMakeLists.txt
+    // 没有这一段，src/main/cpp 下的代码永远不会被编译，也就永远不会生成 libNative.so
+        externalNativeBuild {
+            cmake {
+                path "src/main/cpp/CMakeLists.txt"
+                version "3.18.1"
+            }
+        }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets']
+            jniLibs.srcDirs = ['src/main/jniLibs']
+            res.srcDirs = ['src/main/res']
+        }
+    }
+
+    // 【关键修复3】解决 libc++_shared.so 冲突
+    // 你的 jniLibs 里有 MNN 自带的 libc++，NDK 也会生成一个，必须选一个
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging true
+            pickFirst 'lib/**/libc++_shared.so'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
+    // OpenCV 依赖
+    implementation 'com.quickbirdstudios:opencv:4.5.3.0'
+
+    // Kotlin & AndroidX 基础库
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
+
+    // MultiDex
+    implementation 'androidx.multidex:multidex:2.0.1'
+
+    // 其他依赖 (你原来有的)
+    implementation 'com.google.ai.edge.litert:litert-api:1.4.0'
+}
