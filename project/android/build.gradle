@@ -1,0 +1,23 @@
+// 顶层 build.gradle
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.11.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0"
+    }
+}
+
+// ⚠️ 删除掉 allprojects { repositories { ... } }
+// 因为 settings.gradle 已经定义了 dependencyResolutionManagement
+
+wrapper {
+    distributionUrl = 'https://services.gradle.org/distributions/gradle-7.5-bin.zip'
+}
+//android {
+//    namespace 'com.taobao.android.mnn'
+//}

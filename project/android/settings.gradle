@@ -1,0 +1,27 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()   // 可选，AndroidX 新库不再需要
+        mavenLocal()
+    }
+}
+
+rootProject.name = "MNN"
+
+// ✅ 包含你的 APP
+include(":apps:base_MobilevitAPP")
+include(":apps:base_Yolov8nAPP")
+include(":apps:PaddleOCR")
+
+include(":apps:opt_MobilevitAPP")
+include(":apps:opt_Yolov8nAPP")

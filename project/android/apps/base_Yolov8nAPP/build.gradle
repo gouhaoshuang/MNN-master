@@ -1,0 +1,77 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+    namespace "com.taobao.android.yolov8napp"
+    compileSdk 34  // 升级到较新版本，解决与新Android系统的兼容性问题
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    defaultConfig {
+        applicationId "com.taobao.android.base_yolov8napp"
+        minSdk 21  // 提高到21以支持64位架构和现代Android功能
+        targetSdk 34  // 升级到与compileSdk匹配的版本
+        versionCode 1
+        versionName "1.0"
+
+        // 关键：确保native库正确提取（解决类加载问题）
+        manifestPlaceholders = [
+                "extractNativeLibs": "true"
+        ]
+
+        // 指定支持的 ABI
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false  // 完全禁用代码混淆
+            shrinkResources false  // 完全禁用资源压缩
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            minifyEnabled false  // 完全禁用代码混淆
+            shrinkResources false  // 完全禁用资源压缩
+        }
+    }
+
+    // 确保资源被正确包含
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets']
+            jniLibs.srcDirs = ['src/main/jniLibs']
+            res.srcDirs = ['src/main/res']
+        }
+    }
+
+    // 关键：添加MultiDex支持配置（解决类加载问题）
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging true
+        }
+    }
+
+
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
+    implementation 'androidx.appcompat:appcompat:1.6.1'  // 升级版本
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'  // 升级版本
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'  // 升级版本
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'com.google.ai.edge.litert:litert-api:1.4.0'// 添加MultiDex支持
+}

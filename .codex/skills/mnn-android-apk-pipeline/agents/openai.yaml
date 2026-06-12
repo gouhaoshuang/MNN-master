@@ -1,0 +1,4 @@
+interface:
+  display_name: "MNN Android APK Pipeline"
+  short_description: "Restore assets, build, and deploy MNN Android APKs"
+  default_prompt: "Use $mnn-android-apk-pipeline to restore public OSS assets from the manifest, check my Windows Android build environment, build MNN Android APKs, and guide device validation."

@@ -1,0 +1,80 @@
+android {
+    packagingOptions {
+        jniLibs {
+            excludes += ['**/*.so']
+        }
+    }
+}
+
+tasks.register("appendCMakeEnvVars") {
+    doFirst {
+        android.defaultConfig.externalNativeBuild.cmake.arguments.add(
+                "-DNATIVE_LIBRARY_OUTPUT=$buildDir/native-packed/native/libs"
+        )
+        android.defaultConfig.externalNativeBuild.cmake.arguments.add(
+                "-DNATIVE_INCLUDE_OUTPUT=$buildDir/native-packed/native/includes"
+        )
+    }
+}
+
+tasks.register("copyCMakeExports", Copy) {
+    dependsOn("appendCMakeEnvVars")
+    from("CMakeExports.txt")
+    into("$buildDir/native-packed/native")
+}
+
+tasks.named("preBuild").configure {
+    dependsOn("copyCMakeExports")
+}
+
+// 关键修改：使用 afterEvaluate 确保在项目完全配置后执行
+project.afterEvaluate {
+    android.libraryVariants.all { variant ->
+        def name = variant.name.capitalize()
+
+        // 定义 zipTask
+        def zipTask = tasks.register("zip${name}Aar") {
+            // 处理 QNN 依赖
+            if (project.hasProperty("BUILD_QNN") && project.BUILD_QNN) {
+                dependsOn("prepareQnnDeps")
+            }
+
+            doLast {
+                def aarFile = variant.packageLibraryProvider.get().outputDirectory.get().asFile
+                def finalAar = project.file("${aarFile.parent}/${aarFile.name.replace('-tmp', '')}")
+
+                copy {
+                    from aarFile
+                    into aarFile.parent
+                    rename { fileName ->
+                        fileName.replace("-tmp", "")
+                    }
+                }
+                delete(aarFile)
+
+                println "Generated final AAR: ${finalAar}"
+            }
+        }
+
+        // 安全配置任务依赖关系
+        def bundleTask = tasks.findByName("bundle${name}Aar")
+        if (bundleTask) {
+            zipTask.configure {
+                dependsOn(bundleTask)
+            }
+        }
+
+        def assembleTask = tasks.findByName("assemble${name}")
+        if (assembleTask) {
+            assembleTask.dependsOn(zipTask)
+            zipTask.configure {
+                mustRunAfter(assembleTask)
+            }
+        }
+
+        def packageTask = tasks.findByName("package${name}Aar")
+        if (packageTask) {
+            packageTask.finalizedBy(zipTask)
+        }
+    }
+}

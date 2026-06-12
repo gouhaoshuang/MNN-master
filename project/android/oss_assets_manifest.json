@@ -1,0 +1,99 @@
+{
+  "generatedAtUtc": "2026-06-12T11:24:50.998452+00:00",
+  "bucket": "huawei-model-deploy",
+  "endpoint": "oss-cn-chengdu.aliyuncs.com",
+  "prefix": "mnn-assets/android",
+  "publicBaseUrl": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android",
+  "dedupeMode": "content",
+  "uploader": "ossutil",
+  "assets": [
+    {
+      "name": "base-yolov8n-annotations",
+      "kind": "dir",
+      "targetPath": "project/android/apps/base_Yolov8nAPP/src/main/assets/annotations",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/base-yolov8n-annotations-479aeddd0d810db1.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/base-yolov8n-annotations-479aeddd0d810db1.zip",
+      "sha256": "5bd975a471486da30c26c1dc53b4d3e05dd5108ff8e50a747d84275a791b9939",
+      "sizeBytes": 252987251,
+      "duplicateOf": null
+    },
+    {
+      "name": "base-yolov8n-annotations-zip",
+      "kind": "file",
+      "targetPath": "project/android/apps/base_Yolov8nAPP/src/main/assets/annotations.zip",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/base-yolov8n-annotations-zip-752c6768117c5a92.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/base-yolov8n-annotations-zip-752c6768117c5a92.zip",
+      "sha256": "752c6768117c5a928e0c1c3f6d16edf0e0798974ad5527fa56468347ccdf13ea",
+      "sizeBytes": 252999679,
+      "duplicateOf": null
+    },
+    {
+      "name": "base-yolov8n-yolo-val",
+      "kind": "dir",
+      "targetPath": "project/android/apps/base_Yolov8nAPP/src/main/assets/yolo_val",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/base-yolov8n-yolo-val-4cd1912dea50d06a.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/base-yolov8n-yolo-val-4cd1912dea50d06a.zip",
+      "sha256": "657bf84f4f4efd7d0abb092345cf6951c41c58ae98d7e487e7b14b819f0f4b25",
+      "sizeBytes": 161375606,
+      "duplicateOf": null
+    },
+    {
+      "name": "opt-yolov8n-annotations",
+      "kind": "dir",
+      "targetPath": "project/android/apps/opt_Yolov8nAPP/src/main/assets/annotations",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/base-yolov8n-annotations-479aeddd0d810db1.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/base-yolov8n-annotations-479aeddd0d810db1.zip",
+      "sha256": "5bd975a471486da30c26c1dc53b4d3e05dd5108ff8e50a747d84275a791b9939",
+      "sizeBytes": 252987251,
+      "duplicateOf": "base-yolov8n-annotations"
+    },
+    {
+      "name": "opt-yolov8n-yolo-val",
+      "kind": "dir",
+      "targetPath": "project/android/apps/opt_Yolov8nAPP/src/main/assets/yolo_val",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/base-yolov8n-yolo-val-4cd1912dea50d06a.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/base-yolov8n-yolo-val-4cd1912dea50d06a.zip",
+      "sha256": "657bf84f4f4efd7d0abb092345cf6951c41c58ae98d7e487e7b14b819f0f4b25",
+      "sizeBytes": 161375606,
+      "duplicateOf": "base-yolov8n-yolo-val"
+    },
+    {
+      "name": "base-mobilevit-val-small-data",
+      "kind": "dir",
+      "targetPath": "project/android/apps/base_MobilevitAPP/src/main/assets/val_small_data",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/base-mobilevit-val-small-data-bc50b2dfa74e8c09.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/base-mobilevit-val-small-data-bc50b2dfa74e8c09.zip",
+      "sha256": "b4e4453fbf1bf0ccb798a43b27e96cd4a62b63b00bfd8d38ff7fd49393c3ba4c",
+      "sizeBytes": 395630012,
+      "duplicateOf": null
+    },
+    {
+      "name": "opt-mobilevit-val-small-data",
+      "kind": "dir",
+      "targetPath": "project/android/apps/opt_MobilevitAPP/src/main/assets/val_small_data",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/base-mobilevit-val-small-data-bc50b2dfa74e8c09.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/base-mobilevit-val-small-data-bc50b2dfa74e8c09.zip",
+      "sha256": "b4e4453fbf1bf0ccb798a43b27e96cd4a62b63b00bfd8d38ff7fd49393c3ba4c",
+      "sizeBytes": 395630012,
+      "duplicateOf": "base-mobilevit-val-small-data"
+    },
+    {
+      "name": "paddleocr-imgval",
+      "kind": "dir",
+      "targetPath": "project/android/apps/PaddleOCR/src/main/assets/imgVal",
+      "archiveType": "zip",
+      "objectKey": "mnn-assets/android/paddleocr-imgval-4e67730b322bc917.zip",
+      "url": "https://huawei-model-deploy.oss-cn-chengdu.aliyuncs.com/mnn-assets/android/paddleocr-imgval-4e67730b322bc917.zip",
+      "sha256": "0b6e9f70b354c3243b1d4064c9d353e88821dddaaa8962f8c2f3a4bb22d7a685",
+      "sizeBytes": 89178554,
+      "duplicateOf": null
+    }
+  ]
+}
